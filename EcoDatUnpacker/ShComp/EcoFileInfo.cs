@@ -8,28 +8,34 @@ namespace ShComp
 {
     class EcoFileInfo
     {
-        /// <summary>このファイルを格納する書庫のフルネーム</summary>
-        private string _datName;
-        /// <summary>このファイルの名前を取得します。</summary>
-        public string Name { get; private set; }
+        /// <summary>このファイルを格納する書庫のパス</summary>
+        private string _datPath;
+
         /// <summary>書庫内の開始アドレス</summary>
         private int _addr;
+
         /// <summary>圧縮データのサイズ</summary>
         private int _packSize;
+
         /// <summary>展開データのサイズ</summary>
         private int _unpackSize;
-        /// <summary>抽出データのサイズを取得します。</summary>
-        public int Size { get { return _unpackSize; } }
+
         /// <summary>このファイルが圧縮されて格納されているかどうか</summary>
         private bool _isPacked;
 
         /// <summary>展開データ</summary>
         private WeakReference _dataRef;
 
+        /// <summary>このファイルの名前を取得します。</summary>
+        public string Name { get; private set; }
+
+        /// <summary>抽出データのサイズを取得します。</summary>
+        public int Size { get { return _unpackSize; } }
+
         private EcoFileInfo(string name, string datPath, byte[] parameter)
         {
             Name = name;
-            _datName = datPath;
+            _datPath = datPath;
 
             _addr = BitConverter.ToInt32(parameter, 0);
 
@@ -40,12 +46,15 @@ namespace ShComp
             _unpackSize = BitConverter.ToInt32(parameter, 8);
         }
 
+        [DllImport("Unpack.dll")]
+        private static extern int Unpack(byte[] src, int srcSize, ref IntPtr dst, ref int dstSize, int dw);
+
         public static List<EcoFileInfo> GetList(string hedFileName)
         {
             using (var stream = File.Open(hedFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (var reader = new BinaryReader(stream))
             {
-                var datName = System.IO.Path.ChangeExtension(hedFileName, "dat");
+                var datName = Path.ChangeExtension(hedFileName, "dat");
                 var header = new EcoFileInfo(null, datName, reader.ReadBytes(12));
 
                 var headerData = header.GetBytes();
@@ -71,13 +80,12 @@ namespace ShComp
 
         public byte[] GetBytes()
         {
-            byte[] res;
-
-            if (_dataRef == null || (res = _dataRef.Target as byte[]) == null)
+            var res = _dataRef?.Target as byte[];
+            if (res == null)
             {
                 byte[] rawData;
 
-                using (var stream = File.Open(_datName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var stream = File.Open(_datPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var reader = new BinaryReader(stream))
                 {
                     stream.Seek(_addr, SeekOrigin.Begin);
@@ -117,8 +125,5 @@ namespace ShComp
         {
             return Name;
         }
-
-        [DllImport("Unpack.dll")]
-        private static extern int Unpack(byte[] src, int srcSize, ref IntPtr dst, ref int dstSize, int dw);
     }
 }
