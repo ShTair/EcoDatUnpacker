@@ -214,9 +214,9 @@
     <Resource Include="Images\bookmark_yellow.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="readme.txt">
+    <Content Include="Unpack.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
